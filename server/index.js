@@ -35,17 +35,12 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
 
     // sending data in chunks
 
-    const chunks = [];
+    const chunks = pdfText.split('\n\n')
 
-    for(let i=0; i<pdfText.length; i+=50){
-        chunks.push(pdfText.slice(i, i+50))
-    }
-
-
-    res.json({
+   res.json({
         totalChunks: chunks.length,
         chunks
-    })
+   })
 
 
 
