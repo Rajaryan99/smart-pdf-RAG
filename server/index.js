@@ -22,13 +22,33 @@ app.get('/', (req, res) => {
 app.post('/upload', upload.single('pdf'), async (req, res) => {
     console.log(req.file)
 
+    console.log(req.body)
+    console.log(req.file)
+
+    if(!req.file){
+        return res.status(400).json({error: 'no PDFfile uploaded'})
+    }
+
     const bufferData = fs.readFileSync(req.file.path)
     const pdfData = await pdfParse(bufferData);
     const pdfText = pdfData.text;
 
+    // sending data in chunks
+
+    const chunks = [];
+
+    for(let i=0; i<pdfText.length; i+=50){
+        chunks.push(pdfText.slice(i, i+50))
+    }
 
 
-    res.send(pdfText)
+    res.json({
+        totalChunks: chunks.length,
+        chunks
+    })
+
+
+
 })
 
 app.listen(port, () => {
