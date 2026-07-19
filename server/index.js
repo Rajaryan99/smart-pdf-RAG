@@ -25,16 +25,15 @@ app.get('/', (req, res) => {
 })
 
 app.post('/upload', upload.single('pdf'), async (req, res) => {
-    console.log(req.file)
-
-    console.log(req.body)
-    console.log(req.file)
+  
 
     if(!req.file){
         return res.status(400).json({error: 'no PDFfile uploaded'})
     }
 
-    const bufferData = fs.readFileSync(req.file.path)
+    try {
+
+           const bufferData = fs.readFileSync(req.file.path)
     const pdfData = await pdfParse(bufferData);
     const pdfText = pdfData.text;
 
@@ -42,10 +41,25 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
 
     const chunks = pdfText.split('\n\n')
 
-   res.json({
-        totalChunks: chunks.length,
-        chunks
-   })
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: `Explain the PDF in simple text ${chunks[1]}`
+    })
+
+
+    res.send(response.text)
+  
+        
+    } catch (error) {
+
+        // console.error('PDF uploade error', error);
+        // // res.status(500).json({
+        // //     message:'',
+        // // })
+        
+    }
+
+ 
 
 
 
