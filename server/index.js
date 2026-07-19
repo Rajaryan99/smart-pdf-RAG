@@ -3,6 +3,7 @@ import 'dotenv/config';
 import multer from 'multer';
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import fs from 'fs'
+import {GoogleGenAI} from '@google/genai';
 
 
 
@@ -11,6 +12,10 @@ const app = express();
 const port = process.env.PORT;
 
 app.use(express.json())
+
+const ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY
+})
 
 
 const upload = multer({dest: 'uploads/'})
