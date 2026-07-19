@@ -12,6 +12,7 @@
   "author": "Raj Aryan Singh",
   "license": "ISC",
   "dependencies": {
+    "@google/genai": "^2.12.0",
     "and": "^0.0.3",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
