@@ -17,6 +17,18 @@ const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY
 })
 
+async function createEmbadding(text){
+     const response = await ai.models.embedContent({
+        model: 'gemini-embedding-2',
+        contents: 'What is the meaning of life?',
+    });
+
+    console.log('embading = ', response)
+
+    return response.embeddings[0].values
+
+}
+
 
 const upload = multer({dest: 'uploads/'})
 
@@ -25,6 +37,8 @@ app.get('/', (req, res) => {
 })
 
 app.post('/upload', upload.single('pdf'), async (req, res) => {
+
+    console.log(req.body)
   
 
     if(!req.file){
@@ -37,25 +51,35 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
     const pdfData = await pdfParse(bufferData);
     const pdfText = pdfData.text;
 
-    // sending data in chunks
 
-    const chunks = pdfText.split('\n\n')
+
+
+    // sending data in chunks
+ 
+    const chunks = pdfText.split('\n\n').filter((chunk) => chunk.trim() != '')
+
+    const embading = await createEmbadding(chunks[0])
+    console.log('Question of embiding is = ', embading)
+
+        const question = req.body.question;
+    const matchChunks = chunks.find((chunk) => chunk.toLowerCase().includes(question))
 
     const response = await ai.models.generateContent({
         model: 'gemini-3.5-flash',
-        contents: `Explain the PDF in simple text ${chunks[1]}`
+        contents: `Answer the question using this context: ${matchChunks} and question is ${question}`
     })
 
 
-    res.send(response.text)
+    // res.json({
+    //     matchChunks,
+    //     response: response.text
+    // })
   
         
     } catch (error) {
 
-        // console.error('PDF uploade error', error);
-        // // res.status(500).json({
-        // //     message:'',
-        // // })
+        console.error('PDF uploade error', error);
+    
         
     }
 
