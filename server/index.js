@@ -20,10 +20,9 @@ const ai = new GoogleGenAI({
 async function createEmbadding(text){
      const response = await ai.models.embedContent({
         model: 'gemini-embedding-2',
-        contents: 'What is the meaning of life?',
+        contents: text,
     });
 
-    console.log('embading = ', response)
 
     return response.embeddings[0].values
 
@@ -38,7 +37,6 @@ app.get('/', (req, res) => {
 
 app.post('/upload', upload.single('pdf'), async (req, res) => {
 
-    console.log(req.body)
   
 
     if(!req.file){
@@ -55,25 +53,60 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
 
 
     // sending data in chunks
- 
     const chunks = pdfText.split('\n\n').filter((chunk) => chunk.trim() != '')
 
-    const embading = await createEmbadding(chunks[0])
-    console.log('Question of embiding is = ', embading)
+
+    // creating and storing all the  embadding in vector
+    const chunkEmbaddings = []
+    for(const chunk of chunks){
+        const embadding = await createEmbadding(chunk)
+
+        chunkEmbaddings.push({
+            text: chunk,
+            embadding
+        })
+    }
+
+    function cosineSimilarity(vecA, vecB){
+        let dotProduct = 0;
+
+        for(let i = 0; i < vecA.length; i++){
+            dotProduct += vecA[i] * vecB[i]
+        }
+
+        return dotProduct;
+    }
+
+
 
         const question = req.body.question;
-    const matchChunks = chunks.find((chunk) => chunk.toLowerCase().includes(question))
+        const questionEmbadding = await createEmbadding(question)
+
+        let bestChunk = null;
+        let bestScore = -Infinity;
+
+        for(const items of chunkEmbaddings){
+            const score = cosineSimilarity(questionEmbadding, items.embadding);
+            if(score > bestScore){
+                bestChunk = items.text;
+                bestScore = score;
+            }
+        }
+
+        console.log(bestScore)
+
+
+    // const matchChunks = chunks.find((chunk) => chunk.toLowerCase().includes(question))
+
+
 
     const response = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
-        contents: `Answer the question using this context: ${matchChunks} and question is ${question}`
+        model: 'gemini-3.1-flash-lite',
+        contents: `Answer the question using this context: ${bestChunk} and question is ${question}`
     })
 
 
-    // res.json({
-    //     matchChunks,
-    //     response: response.text
-    // })
+    res.send(response.text)
   
         
     } catch (error) {
