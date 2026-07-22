@@ -45,6 +45,23 @@ app.get('/', (req, res) => {
     res.send("Hello, I am smart PDF. Just uploade the PDF and  can chat with me!!!")
 })
 
+app.get('/createCollection', async (req, res) => {
+    try {
+        await client.createCollection('pdf-dcos', {
+            vectors: {
+                size: 3072,
+                distance: 'Cosine'
+            },
+        })
+
+        res.send('collection is created')
+        
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('failed to create collection')
+    }
+})
+
 
 app.post('/upload', upload.single('pdf'), async (req, res) => {
 
@@ -77,6 +94,19 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
             embadding
         })
     }
+
+    const points = chunkEmbaddings.map((item, index) => ({
+        id: index + 1,
+        vector: item.embadding,
+        payload: {
+            text: item.text
+        },
+    }))
+
+    //storing the embaddings in the qdrant DB
+    await client.upsert('pdf-dcos', {
+        points
+    })
 
     function cosineSimilarity(vecA, vecB){
         let dotProduct = 0;
