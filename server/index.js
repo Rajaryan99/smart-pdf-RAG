@@ -123,24 +123,33 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
         const question = req.body.question;
         const questionEmbadding = await createEmbadding(question)
 
-        let bestChunk = null;
-        let bestScore = -Infinity;
+        // let bestChunk = null;
+        // let bestScore = -Infinity;
 
-        for(const items of chunkEmbaddings){
-            const score = cosineSimilarity(questionEmbadding, items.embadding);
-            if(score > bestScore){
-                bestChunk = items.text;
-                bestScore = score;
-            }
-        }
+        // for(const items of chunkEmbaddings){
+        //     const score = cosineSimilarity(questionEmbadding, items.embadding);
+        //     if(score > bestScore){
+        //         bestChunk = items.text;
+        //         bestScore = score;
+        //     }
+        // }
 
-        console.log(bestScore)
+        // console.log(bestScore)
 
+        const searchResult  = await client.search('pdf-dcos', {
+            vector: questionEmbadding,
+            limit: 1
+        })
+
+        // console.log(searchResult)
 
     // const matchChunks = chunks.find((chunk) => chunk.toLowerCase().includes(question))
 
 
 
+        const bestChunk = searchResult[0].payload.text
+
+        
     const response = await ai.models.generateContent({
         model: 'gemini-3.1-flash-lite',
         contents: `Answer the question using this context: ${bestChunk} and question is ${question}`
