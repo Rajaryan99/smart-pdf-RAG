@@ -4,6 +4,8 @@ import multer from 'multer';
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import fs from 'fs'
 import {GoogleGenAI} from '@google/genai';
+import { QdrantClient } from "@qdrant/js-client-rest";
+
 
 
 
@@ -29,11 +31,20 @@ async function createEmbadding(text){
 }
 
 
+const client = new QdrantClient({
+  url: process.env.QDRENT_URL,
+  apiKey: process.env.QDRENT_API_KEY,
+});
+
+
+
+
 const upload = multer({dest: 'uploads/'})
 
 app.get('/', (req, res) => {
     res.send("Hello, I am smart PDF. Just uploade the PDF and  can chat with me!!!")
 })
+
 
 app.post('/upload', upload.single('pdf'), async (req, res) => {
 
